@@ -1,66 +1,86 @@
-use SEDCHome
-go
+USE SEDCHome
+GO
 
---1.1
-declare @FirstName nvarchar(100)
-set @FirstName = 'Antonio'
+--Declare scalar variable for storing FirstName values
+--Assign value ‘Antonio’ to the FirstName variable
+--Find all Students having FirstName same as the variable
 
-select * from Student
-where FirstName = @FirstName
+DECLARE @FirstName NVARCHAR(100)
+SET @FirstName = 'Antonio'
 
---1.2
-declare @StudentList table
-(StudentId int, StudentName nvarchar(100), DateOfBirth date)
+SELECT * FROM Student
+WHERE FirstName = @FirstName
 
-insert into @StudentList
-select ID, FirstName, DateOfBirth from Student
-where Gender = 'F'
+--Declare table variable that will contain StudentId, StudentName and DateOfBirth
+--Fill the table variable with all Female students
 
-select * from @StudentList
+DECLARE @StudentList TABLE
+(StudentId int, StudentName NVARCHAR(100), DateOfBirth date)
 
---1.3
-create table #StudentTempTable
-(LastName nvarchar(100), EnrolledDate date)
+INSERT INTO @StudentList
+SELECT ID, FirstName, DateOfBirth FROM Student
+WHERE Gender = 'F'
 
-insert into #StudentTempTable
-select LastName, EnrolledDate
-from Student
-where Gender = 'M' and FirstName like 'A%'
+SELECT * FROM @StudentList
 
-select * from #StudentTempTable
-where len(LastName) = 7
+--Declare temp table that will contain LastName and EnrolledDate columns
+--Fill the temp table with all Male students having First Name starting with ‘A’
+--Retrieve the students from the table which last name is with 7 characters
 
---1.4
-select * from Teacher
-where len(FirstName) < 5 and left(FirstName,3) = left(LastName, 3)
+CREATE TABLE #StudentTempTable
+(LastName NVARCHAR(100), EnrolledDate date)
 
---2
-create function dbo.fn_FormatStudentName (@StudentId int)
-returns nvarchar(1000)
-as 
-begin
-declare @Result nvarchar(100)
-select @Result = substring(StudentCardNumber,4,10) + ' - ' + left(FirstName,1) + '.' + LastName
-from Student
-where ID = @StudentId
-return @Result
-end
+INSERT INTO #StudentTempTable
+SELECT LastName, EnrolledDate
+FROM Student
+WHERE Gender = 'M' and FirstName like 'A%'
+GO
 
-select *, dbo.fn_FormatStudentName(id) as FunctionOutput from Student
+SELECT * FROM #StudentTempTable
+WHERE LEN(LastName) = 7
 
---3
+--Find all teachers whose FirstName length is less than 5 and
+--the first 3 characters of their FirstName and LastName are the same
 
-create function dbo.fn_StudentsPassedExam (@TeacherId int, @CourseId int)
-returns @Output table(FirstName nvarchar(100), LastName nvarchar(100), Grade int, CreatedDate datetime)
-as
-begin
-	insert into @Output
-	select s.FirstName, s.LastName, g.Grade, g.CreatedDate
-	from Grade g
-	inner join Student s on s.ID = g.StudentID
-	where g.TeacherID = @TeacherId and g.CourseID = @CourseId and g.Grade > 5
-	group by  s.FirstName, s.LastName,g.Grade, g.CreatedDate
-return
-end
+SELECT * FROM Teacher
+WHERE LEN(FirstName) < 5 and left(FirstName,3) = left(LastName, 3)
 
-select * from dbo.fn_StudentsPassedExam(63,22)
+--Declare scalar function (fn_FormatStudentName) for retrieving the Student description for specific StudentId in the following format:
+--StudentCardNumber without “sc-”
+--“ – “
+--First character of student FirstName
+--“.”
+--Student LastName
+
+CREATE FUNCTION dbo.fn_FormatStudentName (@StudentId int)
+RETURNS NVARCHAR(1000)
+AS 
+BEGIN
+DECLARE @Result NVARCHAR(100)
+SELECT @Result = SUBSTRING(StudentCardNumber,4,10) + ' - ' + left(FirstName,1) + '.' + LastName
+FROM Student
+WHERE ID = @StudentId
+RETURN @Result
+END
+GO
+
+SELECT *, dbo.fn_FormatStudentName(id) AS FunctionOutput FROM Student
+
+--Create multi-statement table value function that for specific Teacher and Course will return list of students (FirstName, LastName) who passed the exam, together with Grade and CreatedDate
+
+CREATE FUNCTION dbo.fn_StudentsPassedExam (@TeacherId int, @CourseId int)
+RETURNS @Output TABLE(FirstName NVARCHAR(100), LastName NVARCHAR(100), Grade int, CreatedDate datetime)
+AS
+BEGIN
+	INSERT INTO @Output
+	SELECT s.FirstName, s.LastName, g.Grade, g.CreatedDate
+	FROM Grade g
+	INNER JOIN Student s ON s.ID = g.StudentID
+	WHERE g.TeacherID = @TeacherId and g.CourseID = @CourseId and g.Grade > 5
+	GROUP BY s.FirstName, s.LastName,g.Grade, g.CreatedDate
+RETURN
+END
+GO
+
+SELECT * FROM dbo.fn_StudentsPassedExam(63,22)
+
