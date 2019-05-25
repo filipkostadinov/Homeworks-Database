@@ -21,6 +21,7 @@ SELECT MAX(Grade) FROM Grade
 WHERE StudentID = @StudentId and TeacherID = @TeacherId
 
 END
+GO
 
 EXEC CreateGrade 
 @StudentId = 115,
@@ -38,7 +39,7 @@ EXEC CreateGrade
 @Comment = 'Dobar',
 @CreatedDate = null
 
-
+GO
 
 --Create new procedure called CreateGradeDetail
 CREATE PROCEDURE CreateGradeDetail (@GradeId int,@AchievementTypeId tinyint,@AchievementPoints tinyint,
@@ -76,9 +77,9 @@ SELECT
 END CATCH
 
 END
+GO
 
 --GradeId 20062 is new created grade in previous task
-
 EXEC CreateGradeDetail 
 @GradeId = 20062,
 @AchievementTypeId = 0,
@@ -113,6 +114,8 @@ EXEC CreateGradeDetail
 @AchievementPoints = 70,
 @AchievementMaxPoints = 100,
 @AchievementDate = null
+
+GO
 
 --Test the error handling by inserting not-existing values for AchievementTypeID
 EXEC CreateGradeDetail 
